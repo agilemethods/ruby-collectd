@@ -1,5 +1,6 @@
 require 'collectd/pkt'
 require 'collectd/em_support'
+require 'collectd/packetbuilder'
 
 
 module Collectd
@@ -170,7 +171,7 @@ module Collectd
       end
     end
 
-    def make_pkt
+    def make_pkts
       @lock.synchronize do
         pkt = nil
         @plugin_type_values = {}
@@ -187,19 +188,16 @@ module Collectd
           populate_plugin_type_values(plugin_types, packet_values)
         end
 
-        pkt = [Packet::Host.new(Collectd.hostname),
-               Packet::Time.new(Time.now.to_i),
-               Packet::Interval.new(10)]
-
+        pkts = []
+        pkts << pkt = PacketBuilder.new(Collectd.hostname)
         @plugin_type_values.each do |plugin,plugin_instances|
-          pkt << Packet::Plugin.new(plugin)
           plugin_instances.each do |plugin_instance,types|
-            pkt << Packet::PluginInstance.new(plugin_instance)
             types.each do |type,type_instances|
-              pkt << Packet::Type.new(type)
               type_instances.each do |type_instance,values|
-                pkt << Packet::TypeInstance.new(type_instance)
-                pkt << values
+                unless pkt.add(plugin, plugin_instance, type, type_instance, values)
+                  pkts << pkt = PacketBuilder.new
+                  pkt.add(plugin, plugin_instance, type, type_instance, values)
+                end
               end
             end
           end
@@ -208,8 +206,7 @@ module Collectd
         # Reset only gauges. Counters are persistent for incrementing.
         @gauges = {}
 
-        # And return serialized packet of parts
-        pkt.to_s
+        pkts
       end
     end
 

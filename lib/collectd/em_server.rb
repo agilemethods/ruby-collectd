@@ -10,10 +10,12 @@ module Collectd
 
       EM.add_periodic_timer(interval) do
         Collectd.run_pollables_for self
-        pkt = make_pkt
-        begin
-          @sock.send(pkt, 0)
-        rescue SystemCallError
+        make_pkts.each do |pkt|
+          pkt = pkt.to_s
+          begin
+            @sock.send(pkt, 0)
+          rescue SystemCallError
+          end
         end
       end
     end
