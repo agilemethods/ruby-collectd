@@ -32,6 +32,7 @@ Gem::Specification.new do |s|
     "lib/collectd/pkt.rb",
     "lib/collectd/proc_stats.rb",
     "lib/collectd/server.rb",
+    "lib/collectd/packet_builder.rb",
     "spec/interface_spec.rb"
   ]
   s.homepage = "http://github.com/astro/ruby-collectd"
