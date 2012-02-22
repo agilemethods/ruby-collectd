@@ -2,14 +2,20 @@ module Collectd
 
   class PacketBuilder
     MAX_SIZE = 1024
-    def initialize(hostname)
-      @head = [Packet::Host.new(hostname),
-               Packet::Time.new(Time.now.to_i),
-               Packet::Interval.new(10)].join
+    def initialize
+      @head = nil
       @data = {}
     end
 
-    def add(plugin, plugin_instance, type, type_instance, values)
+    def add(hostname, plugin, plugin_instance, type, type_instance, values)
+      if @hostname
+        return false if @hostname != hostname
+      else
+        @hostname = hostname
+        @head = [Packet::Host.new(hostname),
+                 Packet::Time.new(Time.now.to_i),
+                 Packet::Interval.new(10)].join
+      end
       pkt_plugin = Packet::Plugin.new(plugin)
       pkt_plugin_instance = Packet::PluginInstance.new(plugin_instance)
       pkt_type = Packet::Type.new(type)
@@ -38,7 +44,7 @@ module Collectd
     end
 
     def to_s
-      @head + recurse_flatten(@data)
+      @head ? @head + recurse_flatten(@data) : ''
     end
   end
 
